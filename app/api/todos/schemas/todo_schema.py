@@ -8,7 +8,6 @@ Version: 1.0
 
 from datetime import datetime
 from enum import Enum
-from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -33,29 +32,12 @@ class Priority(str, Enum):
     extreme = 'Extreme'
 
 
-class TodoBase(BaseModel):
-    """
-    TodoBase Schema validation model
-    """
-
-    status: Status
-    priority: Priority
-    description: str
-
-
-class GetTodo(TodoBase):
-    """
-    Get TodoSchema validation model
-    """
-
-    id: UUID
-    creation_date: datetime
-    completed_date: datetime | None
-
-
-class UpdateTodo(TodoBase):
+class UpdateTodo(BaseModel):
     """
     Update TodoSchema validation model
     """
 
+    description: str
+    status: Status
+    priority: Priority
     completed_date: datetime | None

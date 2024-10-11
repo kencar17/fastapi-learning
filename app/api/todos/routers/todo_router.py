@@ -15,7 +15,7 @@ from pydantic import UUID4
 from sqlmodel import select
 
 from app.api.todos.models.todo import Todo
-from app.api.todos.schemas.todo_schema import Status, Priority, GetTodo, UpdateTodo
+from app.api.todos.schemas.todo_schema import Status, Priority, UpdateTodo
 from app.db.database import SessionDep
 
 router = APIRouter(
@@ -72,7 +72,7 @@ async def get_todo(todo_id: UUID4, session: SessionDep) -> Todo:
 
 
 @router.put("/{todo_id}")
-async def update_todo(todo_id: UUID4, todo_data: UpdateTodo) -> GetTodo:
+async def update_todo(todo_id: UUID4, todo_data: UpdateTodo, session: SessionDep) -> Todo:
     """
     Update the details of a specific to-do item for a certain user. This endpoint accepts a user identifier, a
     task identifier, and optionally a new task description, a status, and a due date. It locates the specified
@@ -80,7 +80,18 @@ async def update_todo(todo_id: UUID4, todo_data: UpdateTodo) -> GetTodo:
     item includes the updated to-do item, with fields like 'todo_id', 'description', 'status', 'creation_date',
     'due_date'.
     """
-    return GetTodo(id=uuid.uuid4(), creation_date=datetime.datetime.now(), status=Status.not_started, priority=Priority.low, description="New One", completed_date=None)
+    record = session.get(Todo, todo_id)
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    todo_clean_data = todo_data.model_dump(exclude_unset=True)
+    record.sqlmodel_update(todo_clean_data)
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+
+    return record
 
 
 @router.delete("/{todo_id}")
