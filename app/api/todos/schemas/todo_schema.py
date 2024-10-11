@@ -43,14 +43,6 @@ class TodoBase(BaseModel):
     description: str
 
 
-class CreateTodo(TodoBase):
-    """
-    Create TodoSchema validation model
-    """
-
-    pass
-
-
 class GetTodo(TodoBase):
     """
     Get TodoSchema validation model
