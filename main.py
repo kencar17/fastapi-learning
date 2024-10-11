@@ -1,13 +1,19 @@
+"""
+Fast Api App.
+This module will the main learning fastapi main app.
+Authors: Kenneth Carmichael (kencar17)
+Date: October 10th 2024
+Version: 1.0
+"""
+
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.api.todos.routers import todo_router
+
+main_app = FastAPI(
+    title="Learning Fastapi",
+    openapi_url="/openapi.json"
+)
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+main_app.include_router(todo_router.router)
