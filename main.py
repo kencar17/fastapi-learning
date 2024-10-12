@@ -9,6 +9,7 @@ Version: 1.0
 from fastapi import FastAPI
 
 from app.api.tasks.routers import task_router
+from app.api.users.routers import user_router
 from app.db.database import create_db_and_tables
 
 main_app = FastAPI(
@@ -22,3 +23,4 @@ def on_startup():
 
 
 main_app.include_router(task_router.router)
+main_app.include_router(user_router.router)

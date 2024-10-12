@@ -1,6 +1,6 @@
 """
-Task Schema.
-This module will contain the schema for a "task" schema and enums for the validation
+Task Router.
+This module will contain the router for a "user" endpoint.
 Authors: Kenneth Carmichael (kencar17)
 Date: October 10th 2024
 Version: 1.0
