@@ -1,6 +1,6 @@
 """
-Todo Database Table
-This module will contain the database model for a todo item
+Task Database Table
+This module will contain the database model for a task item
 Authors: Kenneth Carmichael (kencar17)
 Date: October 10th 2024
 Version: 1.0
@@ -11,8 +11,8 @@ import uuid
 from sqlmodel import Field, SQLModel
 
 
-class Todo(SQLModel, table=True):
-    """Todo Item"""
+class Task(SQLModel, table=True):
+    """Task Item Model"""
 
     id: uuid.UUID | None = Field(default=None, primary_key=True)
     creation_date: datetime.datetime

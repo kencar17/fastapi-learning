@@ -1,6 +1,6 @@
 """
-Todo Item Schema.
-This module will contain the schema for a "to do" item schema and enums for the validation
+Task Schema.
+This module will contain the schema for a task schema and enums for the validation
 Authors: Kenneth Carmichael (kencar17)
 Date: October 10th 2024
 Version: 1.0
@@ -32,9 +32,9 @@ class Priority(str, Enum):
     extreme = 'Extreme'
 
 
-class UpdateTodo(BaseModel):
+class UpdateTask(BaseModel):
     """
-    Update TodoSchema validation model
+    Update task schema validation model
     """
 
     description: str
