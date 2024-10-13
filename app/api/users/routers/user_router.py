@@ -6,7 +6,6 @@ Date: October 11th 2024
 Version: 1.0
 """
 import datetime
-import uuid
 from typing import Annotated
 
 import pytz
@@ -16,8 +15,8 @@ from sqlmodel import select
 
 from app.api.users.helpers import get_user_by_username
 from app.api.users.models.user import User
-from app.api.users.schemas.user_schema import UpdateUser, UserCreate, ReadUser
-from app.core.security import get_password_hash
+from app.api.users.schemas.user_schema import UpdateUser, UserCreate, ReadUser, UpdatePassword
+from app.core.security import get_password_hash, verify_password
 from app.db.database import SessionDep
 
 router = APIRouter(
@@ -28,7 +27,7 @@ router = APIRouter(
 
 
 @router.get("")
-async def get_user(session: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100, username: str = None, full_name: str = None, email: str = None, is_superuser: bool = None, is_active: bool = None) -> list[ReadUser]:
+async def get_users(session: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100, username: str = None, full_name: str = None, email: str = None, is_superuser: bool = None, is_active: bool = None) -> list[ReadUser]:
     """
     Retrieve a list of all users in the system. This endpoint accepts a user identifier as input, queries the
     database for all relevant user details, and returns them in a structured format. Each user record contains
@@ -127,3 +126,29 @@ async def deactivate_user(user_id: UUID4, session: SessionDep) -> dict:
     session.refresh(record)
 
     return {"status": "success", "message": f"{user_id} has been deactivated."}
+
+
+@router.put("/{user_id}/change_password")
+async def change_password(user_id: UUID4, user_data: UpdatePassword, session: SessionDep) -> dict:
+    """
+
+    """
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(user_data.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    if user_data.current_password == user_data.new_password:
+        raise HTTPException(
+            status_code=400, detail="New password cannot be the same as the current one"
+        )
+
+    hashed_password = get_password_hash(user_data.new_password)
+    user.hashed_password = hashed_password
+    session.add(user)
+    session.commit()
+
+    return {"status": "success", "message": "Password updated successfully"}
