@@ -131,7 +131,10 @@ async def deactivate_user(user_id: UUID4, session: SessionDep) -> dict:
 @router.put("/{user_id}/change_password")
 async def change_password(user_id: UUID4, user_data: UpdatePassword, session: SessionDep) -> dict:
     """
-
+    Change the password for a specific user. This endpoint accepts a user identifier, the current password, and
+    the new password as input. It verifies the user’s current password, and if valid, updates the password to the
+    new one in the database. If the password change is successful, it returns a confirmation message indicating
+    that the password has been successfully updated.
     """
     user = session.get(User, user_id)
 
