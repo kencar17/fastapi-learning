@@ -14,8 +14,10 @@ from fastapi import APIRouter, Query, HTTPException
 from pydantic import UUID4
 from sqlmodel import select
 
+from app.api.users.helpers import get_user_by_username
 from app.api.users.models.user import User
-from app.api.users.schemas.user_schema import UpdateUser
+from app.api.users.schemas.user_schema import UpdateUser, UserCreate, ReadUser
+from app.core.security import get_password_hash
 from app.db.database import SessionDep
 
 router = APIRouter(
@@ -26,37 +28,50 @@ router = APIRouter(
 
 
 @router.get("")
-async def get_user(session: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100, username: str = None, first_name: str = None, last_name: str = None, email: str = None, is_staff: bool = None, is_superuser: bool = None, is_active: bool = None) -> list[User]:
+async def get_user(session: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100, username: str = None, full_name: str = None, email: str = None, is_superuser: bool = None, is_active: bool = None) -> list[ReadUser]:
     """
     Retrieve a list of all users in the system. This endpoint accepts a user identifier as input, queries the
     database for all relevant user details, and returns them in a structured format. Each user record contains
     information such as the user’s name, email, registration date, and account status (active or inactive).
     """
-    tasks = session.exec(select(User).offset(offset).limit(limit)).all()
+    users = session.exec(select(User).offset(offset).limit(limit)).all()
 
-    return tasks
+    return users
 
 
 @router.post("")
-async def create_user(user_data: User, session: SessionDep) -> User:
+async def create_user(user_data: UserCreate, session: SessionDep) -> User:
     """
     Create a new user in the system. This endpoint accepts user details such as the user’s name, email, and an
     optional registration date. It creates a new user record in the database, setting the account status to ‘active’
     by default and automatically recording the registration date. A dictionary representing the created user is
     returned, containing fields like ‘user_id’, ‘name’, ‘email’, ‘status’, and ‘join_date’.
     """
-    user_data.id = uuid.uuid4()
-    user_data.registration_date = datetime.datetime.now(tz=pytz.utc)
-    user_data.is_active = True
+    user_found = get_user_by_username(session=session, username=user_data.username)
 
-    session.add(user_data)
+    if user_found:
+        raise HTTPException(
+            status_code=400,
+            detail="The user with this email already exists in the system.",
+        )
+
+    user = User.model_validate(
+        user_data, update={
+            "registration_date": datetime.datetime.now(tz=pytz.utc),
+            "hashed_password": get_password_hash(user_data.password),
+            "email": user_data.username
+        }
+    )
+
+    session.add(user)
     session.commit()
-    session.refresh(user_data)
-    return user_data
+    session.refresh(user)
+
+    return user
 
 
 @router.get("/{user_id}")
-async def get_user(user_id: UUID4, session: SessionDep) -> User:
+async def get_user(user_id: UUID4, session: SessionDep) -> ReadUser:
     """
     Retrieve a specific user by their identifier. This endpoint accepts a user identifier as input and queries the
     database for the specified user. It returns the user details in a structured format, including information such
@@ -72,7 +87,7 @@ async def get_user(user_id: UUID4, session: SessionDep) -> User:
 
 
 @router.put("/{user_id}")
-async def update_user(user_id: UUID4, user_data: UpdateUser, session: SessionDep) -> User:
+async def update_user(user_id: UUID4, user_data: UpdateUser, session: SessionDep) -> ReadUser:
     """
     Update the details of a specific user. This endpoint accepts a user identifier and optionally new details such
     as the user’s name, email, and account status. It locates the specified user in the database and updates the

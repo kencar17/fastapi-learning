@@ -8,20 +8,17 @@ Version: 1.0
 import datetime
 import uuid
 
-from sqlmodel import Field, SQLModel
+from pydantic import EmailStr
+from sqlmodel import Field
+
+from app.api.users.schemas.user_schema import UserBase
 
 
-class User(SQLModel, table=True):
+class User(UserBase, table=True):
     """User Model"""
 
-    id: uuid.UUID | None = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    hashed_password: str
     registration_date: datetime.datetime
     last_login: datetime.datetime | None = None
-    username: str
-    display_name: str | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    email: str | None = None
-    is_staff: bool | None = None
-    is_superuser: bool | None = None
-    is_active: bool | None = None
+    email: EmailStr = Field(max_length=255)
